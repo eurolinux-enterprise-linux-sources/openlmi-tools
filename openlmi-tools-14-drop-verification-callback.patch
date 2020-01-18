@@ -1,0 +1,70 @@
+diff --git a/cli/lmi/shell/LMIBaseClient.py b/cli/lmi/shell/LMIBaseClient.py
+index c2d78e9..6a0f677 100644
+--- a/cli/lmi/shell/LMIBaseClient.py
++++ b/cli/lmi/shell/LMIBaseClient.py
+@@ -49,23 +49,6 @@ class LMIBaseClient(object):
+     CONN_TYPE_PEGASUS_UDS = range(2)
+ 
+     def __init__(self, uri, username="", password="", **kwargs):
+-        def verify_callback(conn, cert, errno, errdepth, rcode):
+-            """
+-            Callback function used to verify the server certificate. It is passed to
+-            OpenSSL.SSL.set_verify, and is called during the SSL handshake. This function
+-            returns True, if verification passes and False otherwise.
+-
+-            :param conn: Connection object
+-            :param cert: x509 object
+-            :param int errno: potential error number
+-            :param int errdepth: error depth
+-            :param int rcode: return code
+-            :returns: True, if certificate was successfully verified; False otherwise
+-
+-            **NOTE:** see :py:class:`pywbem.cim_operations.WBEMConnection`
+-            """
+-            return bool(rcode) and cert.get_subject().commonName == hostname
+-
+         # Set remaining arguments
+         conn_type = kwargs.pop("conn_type", LMIBaseClient.CONN_TYPE_WBEM)
+         verify_server_cert = kwargs.pop("verify_server_cert", True)
+@@ -87,7 +70,7 @@ class LMIBaseClient(object):
+             self._cliconn = pywbem.WBEMConnection(self._uri,
+                 (self._username, password),
+                 x509={"key_file" : key_file, "cert_file" : cert_file},
+-                verify_callback=verify_callback if verify_server_cert else None
++                no_verification=not verify_server_cert
+             )
+ 
+     # NOTE: usage with Key=something, Value=something is deprecated
+diff --git a/cli/lmi/shell/LMIConnection.py b/cli/lmi/shell/LMIConnection.py
+index af9379b..d00e187 100644
+--- a/cli/lmi/shell/LMIConnection.py
++++ b/cli/lmi/shell/LMIConnection.py
+@@ -21,7 +21,9 @@ import logging
+ import readline
+ import urlparse
+ 
+-import OpenSSL.SSL
++import M2Crypto.SSL
++import M2Crypto.SSL.Checker
++import M2Crypto.X509
+ 
+ from LMIBaseClient import LMIBaseClient
+ from LMIShellClient import LMIShellClient
+@@ -312,12 +314,12 @@ class LMIConnection(object):
+                 return LMIReturnValue(rval=True)
+             lmi_raise_or_dump_exception(e)
+             errorstr = e.args[1]
+-        except pywbem.cim_http.AuthError, e:
++        except (pywbem.cim_http.AuthError, \
++                M2Crypto.SSL.Checker.SSLVerificationError, \
++                M2Crypto.SSL.SSLError, \
++                M2Crypto.X509.X509Error), e:
+             lmi_raise_or_dump_exception(e)
+-            errorstr = e.args[0]
+-        except OpenSSL.SSL.Error, e:
+-            lmi_raise_or_dump_exception(e)
+-            errorstr = e.args[0][0][2]
++            errorstr = str(e)
+         return LMIReturnValue(rval=False, errorstr=errorstr)
+ 
+     def subscribe_indication(self, **kwargs):

@@ -1,0 +1,13 @@
+diff --git a/cli/lmi/shell/LMIInstance.py b/cli/lmi/shell/LMIInstance.py
+index 2152ba6..126d438 100644
+--- a/cli/lmi/shell/LMIInstance.py
++++ b/cli/lmi/shell/LMIInstance.py
+@@ -713,7 +713,7 @@ class LMIInstance(LMIWrapperBaseObject):
+ 
+         **Usage:** :ref:`instances_delete`.
+         """
+-        (rval, rparams, errorstr) = self._conn._client._delete_instance(self.path)
++        (rval, rparams, errorstr) = self._conn._client._delete_instance(self._cim_instance.path)
+         self._deleted = rval == 0
+         return self._deleted
+ 

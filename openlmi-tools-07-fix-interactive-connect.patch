@@ -1,0 +1,93 @@
+diff --git a/cli/lmi/shell/LMIConsole.py b/cli/lmi/shell/LMIConsole.py
+index 21238e2..f1c9c4f 100644
+--- a/cli/lmi/shell/LMIConsole.py
++++ b/cli/lmi/shell/LMIConsole.py
+@@ -118,6 +118,7 @@ class LMIConsole(code.InteractiveConsole):
+                 * **cert_file** (*string*) -- path to x509 cert file; default value is None
+                 * **verify_server_cert** (*bool*) -- tells, if the server side certificate
+                   needs to be verified, if SSL used; default value is True
++                * **prompt_prefix** (*string*) -- used for username/password prompt
+ 
+             :returns: connection object
+             :rtype: :py:class:`LMIConnection`
+@@ -125,12 +126,13 @@ class LMIConsole(code.InteractiveConsole):
+             key_file = kwargs.pop("key_file", None)
+             cert_file = kwargs.pop("cert_file", None)
+             verify_server_cert = kwargs.pop("verify_server_cert", self._verify_server_cert)
++            prompt_prefix = kwargs.pop("propmpt_prefix", "")
+             if kwargs:
+                 raise TypeError("connect() got an unexpected keyword arguments: %s" % ", ".join(kwargs.keys()))
+ 
+             return connect_internal(uri, username, password, interactive=True,
+                 use_cache=self._use_cache, key_file=key_file, cert_file=cert_file,
+-                verify_server_cert=verify_server_cert)
++                verify_server_cert=verify_server_cert, prompt_prefix=prompt_prefix)
+ 
+         # Initialize the interpreter
+         if locals is None:
+@@ -187,7 +189,7 @@ class LMIConsole(code.InteractiveConsole):
+             sys.ps2 = old_sys_ps2
+         self.save_history()
+ 
+-    def interpret(self, script_name, script_argv, locals=None):
++    def interpret(self, script_name, script_argv, locals=None, interactive=False):
+         """
+         Interprets a specified script within additional provided locals.
+         There are :py:attr:`LMIConsole.DEFAULT_LOCALS` present.
+@@ -195,10 +197,12 @@ class LMIConsole(code.InteractiveConsole):
+         :param string script_name: script name
+         :param list script_argv: script CLI arguments
+         :param dictionary locals: dictionary with locals
++        :param bool interactive: tells LMIShell, if the script should be treated
++            as if it was run in interactive mode
+         :returns: exit code of the script
+         :rtype: int
+         """
+-        # Helper function for non-interactive connect
++        # Helper function for LMIShell's scripts
+         def connect(uri, username="", password="", **kwargs):
+             """
+             Returns :py:class:`LMIConnection` object with provided URI and credentials.
+@@ -212,6 +216,7 @@ class LMIConsole(code.InteractiveConsole):
+                 * **cert_file** (*string*) -- path to x509 cert file; default value is None
+                 * **verify_server_cert** (*bool*) -- tells, if the server side certificate
+                   needs to be verified, if SSL used; default value is True
++                * **prompt_prefix** (*string*) -- used for username/password prompt
+ 
+             :returns: connection object
+             :rtype: :py:class:`LMIConnection`
+@@ -220,12 +225,13 @@ class LMIConsole(code.InteractiveConsole):
+             key_file = kwargs.pop("key_file", None)
+             cert_file = kwargs.pop("cert_file", None)
+             verify_server_cert = kwargs.pop("verify_server_cert", self._verify_server_cert)
++            prompt_prefix = kwargs.pop("prompt_prefix", "")
+             if kwargs:
+                 raise TypeError("connect() got an unexpected keyword arguments: %s" % ", ".join(kwargs.keys()))
+ 
+-            return connect_internal(uri, username, password, interactive=False,
++            return connect_internal(uri, username, password, interactive=interactive,
+                 use_cache=self._use_cache, key_file=key_file, cert_file=cert_file,
+-                verify_server_cert=verify_server_cert)
++                verify_server_cert=verify_server_cert, prompt_prefix=prompt_prefix)
+         # Initialize locals
+         if locals is None:
+             locals = {}
+diff --git a/cli/lmishell b/cli/lmishell
+index aaa8f7b..433d413 100755
+--- a/cli/lmishell
++++ b/cli/lmishell
+@@ -47,8 +47,12 @@ if __name__ == "__main__":
+     else:
+         script_name = options.script_name
+         script_argv = options.script_argv
+-        exit_code = console.interpret(script_name, script_argv)
+-        if options.interact:
++        interactive = options.interact
++        exit_code = console.interpret(
++            script_name,
++            script_argv,
++            interactive=interactive)
++        if interactive:
+             console.interact(console.locals)
+         else:
+             sys.exit(exit_code)

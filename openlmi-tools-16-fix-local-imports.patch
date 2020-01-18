@@ -1,0 +1,99 @@
+diff --git a/cli/completion/_lmishell b/cli/completion/_lmishell
+index d3843b3..3899816 100644
+--- a/cli/completion/_lmishell
++++ b/cli/completion/_lmishell
+@@ -31,5 +31,6 @@ _lmishell() {
+         '(-v --verbose)'{-v,--verbose}'[print log messages to stderr]' \
+         '(-m --more-verbose)'{-m,--more-verbose}'[print all log messages to stderr]' \
+         '(-q --quiet)'{-q,--quiet}'[do not print any log messages to stderr]' \
+-        '(-n --noverify)'{-n,--noverify}'[do not verify CIMOM SSL certificate]'
++        '(-n --noverify)'{-n,--noverify}'[do not verify CIMOM SSL certificate]' \
++        '--cwd-first-in-path[prepend CWD in sys.path instead of appending it]'
+ }
+diff --git a/cli/completion/lmishell.bash b/cli/completion/lmishell.bash
+index 07958f0..2d22468 100644
+--- a/cli/completion/lmishell.bash
++++ b/cli/completion/lmishell.bash
+@@ -23,7 +23,7 @@
+ _lmishell() {
+     oldifs=$IFS
+     IFS=$'\n'
+-    local options=(-h -i -v -m -q -n --help --interact --verbose --more-verbose --quiet --noverify)
++    local options=(-h -i -v -m -q -n --help --interact --verbose --more-verbose --quiet --noverify --cwd-first-in-path)
+     local current="${COMP_WORDS[$COMP_CWORD]}"
+     local hasfile=no
+     for (( i=1; i < ${#COMP_WORDS[@]} - 1; i++ )); do
+diff --git a/cli/lmi/shell/LMIConsole.py b/cli/lmi/shell/LMIConsole.py
+index f1c9c4f..32814cc 100644
+--- a/cli/lmi/shell/LMIConsole.py
++++ b/cli/lmi/shell/LMIConsole.py
+@@ -72,7 +72,7 @@ class LMIConsole(code.InteractiveConsole):
+         "help" : LMIHelper()
+     }
+ 
+-    def __init__(self):
++    def __init__(self, cwd_first_in_path=False):
+         # Setup default LMIConsole locals, that are needed
+         # for proper object construction
+         locals = dict(LMIConsole.DEFAULT_LOCALS.items())
+@@ -90,6 +90,14 @@ class LMIConsole(code.InteractiveConsole):
+         # should propagate caught exceptions, or dump them
+         lmi_set_use_exceptions(self._use_exceptions)
+ 
++        # Append/Prepend current working directory into Python's search list, so we can
++        # properly import any module placed in CWD. By default, the CWD is appended for
++        # security reasons.
++        if cwd_first_in_path:
++            sys.path.insert(0, os.getcwd())
++        else:
++            sys.path.append(os.getcwd())
++
+     def setup_completer(self):
+         """
+         Initializes tab-completer.
+diff --git a/cli/lmi/shell/LMIShellOptions.py b/cli/lmi/shell/LMIShellOptions.py
+index 8695fec..96ae95d 100644
+--- a/cli/lmi/shell/LMIShellOptions.py
++++ b/cli/lmi/shell/LMIShellOptions.py
+@@ -76,6 +76,9 @@ class LMIShellOptions(object):
+         parser.add_argument("-n", "--noverify", dest="verifycert",
+             action="store_false", default=True,
+             help="do not verify CIMOM SSL certificate")
++        parser.add_argument("--cwd-first-in-path", dest="cwd_first_in_path",
++            action="store_true", default=False,
++            help="prepend CWD in sys.path instead of appending it")
+ 
+         # Split CLI arguments into LMIShell ones and script ones. LMIShell arguments
+         # are those, which are before the first positional argument. Other CLI arguments
+@@ -94,6 +97,7 @@ class LMIShellOptions(object):
+         # Store CLI options
+         self._interact = options.interact
+         self._verifycert = options.verifycert
++        self._cwd_first_in_path = options.cwd_first_in_path
+         self._log = LMIShellOptions._LOG_DEFAULT
+         if options.verbose:
+             self._log = LMIShellOptions._LOG_VERBOSE
+@@ -163,3 +167,10 @@ class LMIShellOptions(object):
+         :rtype: bool
+         """
+         return self._verifycert
++
++    @property
++    def cwd_first_in_path(self):
++        """
++        :returns: True, if CWD should be prepended in sys.path; False if appended
++        """
++        return self._cwd_first_in_path
+diff --git a/cli/lmishell b/cli/lmishell
+index 433d413..b676e40 100755
+--- a/cli/lmishell
++++ b/cli/lmishell
+@@ -40,7 +40,7 @@ if __name__ == "__main__":
+         # By default, print error messages to stderr stream
+         logger.setLevel(logging.ERROR)
+ 
+-    console = LMIConsole()
++    console = LMIConsole(options.cwd_first_in_path)
+     console.set_verify_server_certificate(options.verify_server_cert)
+     if options.interactive:
+         console.interact()

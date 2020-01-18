@@ -1,0 +1,127 @@
+diff --git a/cli/lmi/shell/LMIConnection.py b/cli/lmi/shell/LMIConnection.py
+index 301fa52..7c693c7 100644
+--- a/cli/lmi/shell/LMIConnection.py
++++ b/cli/lmi/shell/LMIConnection.py
+@@ -17,6 +17,7 @@ import os
+ import sys
+ import atexit
+ import pywbem
++import logging
+ import readline
+ import urlparse
+ 
+@@ -57,8 +58,8 @@ def __lmi_raw_input(prompt, use_echo=True):
+         get_input = raw_input
+         stream = sys.stdout
+     if not sys.stderr.isatty() and not sys.stdout.isatty():
+-        LOG.warn('both stdout and stderr are detached from terminal,'
+-            ' using stdout for prompt')
++        logging.getLogger("").warn(
++            'Both stdout and stderr are detached from terminal, using stdout for prompt')
+     if not use_echo:
+         os.system("stty -echo")
+     try:
+@@ -126,6 +127,7 @@ def connect(uri, username="", password="", **kwargs):
+     if kwargs:
+         raise TypeError("connect() got an unexpected keyword arguments: %s" % ", ".join(kwargs.keys()))
+ 
++    logger = logging.getLogger("")
+     connection = None
+     netloc = urlparse.urlparse(uri).netloc
+     destination = netloc if netloc else uri
+@@ -135,8 +137,11 @@ def connect(uri, username="", password="", **kwargs):
+         connection = LMIConnection(uri, None, None, interactive=interactive,
+             use_cache=use_cache, conn_type=LMIBaseClient.CONN_TYPE_PEGASUS_UDS,
+             verify_server_cert=verify_server_cert)
+-        if not connection.verify_credentials():
++        (rval, _, errorstr) = connection.verify_credentials()
++        if not rval:
+             connection = None
++        else:
++            logger.info("Connected via Unix-socket")
+     if connection is None:
+         if interactive and not key_file and not cert_file:
+             try:
+@@ -150,8 +155,12 @@ def connect(uri, username="", password="", **kwargs):
+         connection = LMIConnection(uri, username, password, interactive=interactive,
+             use_cache=use_cache, conn_type=LMIBaseClient.CONN_TYPE_WBEM,
+             key_file=key_file, cert_file=cert_file, verify_server_cert=verify_server_cert)
+-        if not connection.verify_credentials():
++        (rval, _, errorstr) = connection.verify_credentials()
++        if not rval:
++            logger.error("Error connecting to %s, %s", uri, errorstr)
+             return None
++        else:
++            logger.info("Connected to %s", uri)
+     return connection
+ 
+ class LMIConnection(object):
+@@ -282,8 +291,13 @@ class LMIConnection(object):
+         ``CIM_ERR_NOT_FOUND`` set. Otherwise, the should receive
+         :py:exc:`pywbem.AuthError`.
+ 
+-        :returns: True if provided credentials are OK; False otherwise
++        :returns: :py:class:`LMIReturnValue` object with rval set to True, if
++            the user was properly authenticated; False otherwise. In case of any
++            error, rval is set to False and errorstr contains appropriate error
++            string.
++        :rtype: :py:class:`LMIReturnValue`
+         """
++        errorstr = ""
+         try:
+             use_exceptions = lmi_get_use_exceptions()
+             lmi_set_use_exceptions(True)
+@@ -295,13 +309,16 @@ class LMIConnection(object):
+                 lmi_set_use_exceptions(use_exceptions)
+         except pywbem.cim_operations.CIMError, e:
+             if e.args[0] == pywbem.cim_constants.CIM_ERR_NOT_FOUND:
+-                return True
++                return LMIReturnValue(rval=True)
+             lmi_raise_or_dump_exception(e)
++            errorstr = e.args[1]
+         except pywbem.cim_http.AuthError, e:
+             lmi_raise_or_dump_exception(e)
++            errorstr = e.args[0]
+         except OpenSSL.SSL.Error, e:
+             lmi_raise_or_dump_exception(e)
+-        return False
++            errorstr = e.args[0][0][2]
++        return LMIReturnValue(rval=False, errorstr=errorstr)
+ 
+     def subscribe_indication(self, **kwargs):
+         """
+diff --git a/cli/lmishell b/cli/lmishell
+index e493af5..aaa8f7b 100755
+--- a/cli/lmishell
++++ b/cli/lmishell
+@@ -22,24 +22,23 @@ from lmi.shell import LMIShellOptions
+ 
+ if __name__ == "__main__":
+     options = LMIShellOptions(sys.argv)
++    logging.basicConfig(format='%(levelname)s: %(message)s')
++    logger = logging.getLogger("")
+     if options.log == LMIShellOptions._LOG_MORE_VERBOSE:
+         # Print out all the log messages to stderr stream
+-        logger = logging.getLogger("")
+         logger.setLevel(logging.DEBUG)
+-        logger.addHandler(logging.StreamHandler(sys.stderr))
+     elif options.log == LMIShellOptions._LOG_VERBOSE:
+         # Print out only a set of log messages to stderr stream
+-        logger = logging.getLogger("")
+         logger.setLevel(logging.INFO)
+-        logger.addHandler(logging.StreamHandler(sys.stderr))
+     elif options.log == LMIShellOptions._LOG_QUIET:
+         # Quiet flag seen, drop all the log messages
+-        logging.getLogger("").addHandler(logging.NullHandler())
++        handlers = logger.handlers
++        for handler in handlers:
++            logger.removeHandler(handler)
++        logger.addHandler(logging.NullHandler())
+     else:
+         # By default, print error messages to stderr stream
+-        logger = logging.getLogger("")
+         logger.setLevel(logging.ERROR)
+-        logger.addHandler(logging.StreamHandler(sys.stderr))
+ 
+     console = LMIConsole()
+     console.set_verify_server_certificate(options.verify_server_cert)

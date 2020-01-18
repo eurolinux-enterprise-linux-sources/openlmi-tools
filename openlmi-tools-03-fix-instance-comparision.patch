@@ -1,0 +1,49 @@
+diff --git a/cli/lmi/shell/LMIInstance.py b/cli/lmi/shell/LMIInstance.py
+index 126d438..17ca570 100644
+--- a/cli/lmi/shell/LMIInstance.py
++++ b/cli/lmi/shell/LMIInstance.py
+@@ -50,6 +50,22 @@ class LMIInstance(LMIWrapperBaseObject):
+         self.__dict__["_lmi_class"] = lmi_class
+         super(LMIInstance, self).__init__(conn)
+ 
++    def __cmp__(self, other):
++        """
++        :param LMIInstance other: :py:class:`LMIInstance` object to compare
++        :returns: If both instances are (not) deleted: negative number, if self < other; 0
++            if self == other or positive number, if self > other. If the first or second
++            instance is deleted, -1 or 1 is returned.
++        :rtype: int
++        """
++        if not isinstance(other, LMIInstance):
++            return -1
++        if self._deleted and not other._deleted:
++            return -1
++        elif not self._deleted and other._deleted:
++            return 1
++        return cmp(self._cim_instance, other._cim_instance)
++
+     @lmi_possibly_deleted(False)
+     def __contains__(self, key):
+         """
+diff --git a/cli/lmi/shell/LMIInstanceName.py b/cli/lmi/shell/LMIInstanceName.py
+index 254ddc2..08f8eb7 100644
+--- a/cli/lmi/shell/LMIInstanceName.py
++++ b/cli/lmi/shell/LMIInstanceName.py
+@@ -33,6 +33,17 @@ class LMIInstanceName(LMIWrapperBaseObject):
+             cim_instance_name = cim_instance_name.wrapped_object
+         self._cim_instance_name = cim_instance_name
+ 
++    def __cmp__(self, other):
++        """
++        :param LMIInstanceName other: :py:class:`LMIInstanceName` object to compare
++        :returns: negative number, if self < other; 0 if self == other or positive
++            number, if self > other
++        :rtype: int
++        """
++        if not isinstance(other, LMIInstanceName):
++            return -1
++        return cmp(self._cim_instance_name, other._cim_instance_name)
++
+     def __contains__(self, key):
+         """
+         :param string key: key name, which will be tested for presence in keybindings

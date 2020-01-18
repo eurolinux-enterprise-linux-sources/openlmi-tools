@@ -1,0 +1,81 @@
+diff --git a/cli/completion/README_zsh.md b/cli/completion/README_zsh.md
+index 3c66c06..6385ed0 100644
+--- a/cli/completion/README_zsh.md
++++ b/cli/completion/README_zsh.md
+@@ -1,4 +1,4 @@
+-# OpenLMI Shell Completion for Zsh
++# LMIShell Completion for Zsh
+ Supplied completion function defined in `_lmishell` supports completion of all
+ command line arguments of `lmishell`. The completion also works for script
+ filename completion with `.lmi` or `.py` extension.
+diff --git a/cli/completion/_lmishell b/cli/completion/_lmishell
+index f6e7c33..d3843b3 100644
+--- a/cli/completion/_lmishell
++++ b/cli/completion/_lmishell
+@@ -18,7 +18,7 @@
+ #
+ # Authors: Peter Hatina <phatina@redhat.com>
+ #
+-# Zsh completion for OpenLMI Shell
++# Zsh completion for LMIShell
+ 
+ _lmishell() {
+     local curcontext="$curcontext" state line
+@@ -26,7 +26,7 @@ _lmishell() {
+ 
+     _arguments -C \
+         '(- 1 *)'{-h,--help}'[print help message and exit]' \
+-        '(- 1 *):OpenLMI Shell Script:_files -g \*.\(lmi\|py\)' \
++        '(- 1 *):LMIShell Script:_files -g \*.\(lmi\|py\)' \
+         '(-i --interact)'{-i,--interact}'[inspect interactively after running a script]' \
+         '(-v --verbose)'{-v,--verbose}'[print log messages to stderr]' \
+         '(-m --more-verbose)'{-m,--more-verbose}'[print all log messages to stderr]' \
+diff --git a/cli/lmi/shell/LMIShellOptions.py b/cli/lmi/shell/LMIShellOptions.py
+index acabf2c..8695fec 100644
+--- a/cli/lmi/shell/LMIShellOptions.py
++++ b/cli/lmi/shell/LMIShellOptions.py
+@@ -29,7 +29,7 @@ class LMIShellOptionsHelpWithVersionFormatter(argparse.HelpFormatter):
+         LMIShell version to the usage message.
+         """
+         return argparse.HelpFormatter._format_usage(self, usage, actions, groups,
+-            "OpenLMI Shell v%s\n\n" % __version__)
++            "LMIShell v%s\n\n" % __version__)
+ 
+ class LMIShellOptionParser(argparse.ArgumentParser):
+     """
+diff --git a/doc/src/man_page.rst b/doc/src/man_page.rst
+index bf1c63f..8e0ec60 100644
+--- a/doc/src/man_page.rst
++++ b/doc/src/man_page.rst
+@@ -7,8 +7,8 @@ Description
+ LMIShell provides a (non)interactive or interactive way how to access CIM
+ objects provided by OpenPegasus or sblim-sfcb CIMOM.
+ 
+-OpenLMI Shell is based on a python interpreter and added logic, therefore what
+-is possible to do in pure python, it is possible in LMIShell. There are classes
++LMIShell is based on a python interpreter and added logic, therefore what is
++possible to do in pure python, it is possible in LMIShell. There are classes
+ added to manipulate with CIM classes, instance names, instances, etc.
+ Additional classes are added to fulfill wrapper pattern and expose only those
+ methods, which are necessary for the purpose of a shell.
+diff --git a/doc/src/structure.rst b/doc/src/structure.rst
+index 07ce4ca..cacd234 100644
+--- a/doc/src/structure.rst
++++ b/doc/src/structure.rst
+@@ -1,10 +1,10 @@
+ Structure
+ =========
+-OpenLMI Shell is based on a python interpreter and added logic, therefore what
+-you can do in pure python, it is possible in OpenLMI Shell. There are classes
+-added to manipulate with CIM classes, instance names, instances, etc.
+-Additional classes are added to fulfill wrapper pattern and expose only those
+-methods, which are necessary for the purpose of a shell. Following scheme
+-depicts a structure of the OpenLMI Shell.
++LMIShell is based on a python interpreter and added logic, therefore what you
++can do in pure python, it is possible in LMIShell. There are classes added to
++manipulate with CIM classes, instance names, instances, etc.  Additional
++classes are added to fulfill wrapper pattern and expose only those methods,
++which are necessary for the purpose of a shell. Following scheme depicts a
++structure of the LMIShell.
+ 
+ .. image:: _static/lmi-scheme.png

@@ -1,0 +1,13 @@
+diff --git a/cli/lmi/shell/LMIMethod.py b/cli/lmi/shell/LMIMethod.py
+index 5681b2f..a658e8c 100644
+--- a/cli/lmi/shell/LMIMethod.py
++++ b/cli/lmi/shell/LMIMethod.py
+@@ -478,6 +478,8 @@ class LMIMethod(LMIWrapperBaseObject):
+             if param in self._method.parameters:
+                 if isinstance(value, LMIObjectFactory().LMIInstanceName):
+                     value = value.wrapped_object
++                elif isinstance(value, LMIObjectFactory().LMIInstance):
++                    value = value.wrapped_object.path
+                 t = self._method.parameters[param].type
+                 method_args[param] = lmi_cast_to_cim(t, value)
+             else:

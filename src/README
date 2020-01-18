@@ -1,0 +1,38 @@
+*******************************************************************************
+* OpenLMI                                                                     *
+*******************************************************************************
+
+The OpenLMI project provides a common infrastructure for the management of Linux
+systems. Capabilities include configuration, management and monitoring of
+hardware, operating systems, and system services. OpenLMI includes a set of
+services that can be accessed both locally and remotely, multiple language
+bindings, standard APIs, and standard scripting interfaces.
+
+
+*******************************************************************************
+* OpenLMI-tools                                                               *
+*******************************************************************************
+
+OpenLMI-tools currently contains lmishell, a  (non)interactive command
+interpreter for CIM objects access.
+
+*******************************************************************************
+* Dependencies                                                                *
+*******************************************************************************
+
+OpenLMI tools require python2.7, python setuptools and pywbem module installed.
+
+*******************************************************************************
+* Installation                                                                *
+*******************************************************************************
+
+Following steps will install the OpenLMI tools into desired directory.
+
+$ cd cli-tools
+# python setup.py install --root=/path/to/install/directory
+
+*******************************************************************************
+* Example usage                                                               *
+*******************************************************************************
+
+See man/lmishell.1 manual page.
