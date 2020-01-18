@@ -2,7 +2,7 @@ diff --git a/cli/lmi/shell/LMIInstance.py b/cli/lmi/shell/LMIInstance.py
 index 126d438..17ca570 100644
 --- a/cli/lmi/shell/LMIInstance.py
 +++ b/cli/lmi/shell/LMIInstance.py
-@@ -50,6 +50,22 @@ class LMIInstance(LMIWrapperBaseObject):
+@@ -50,6 +50,20 @@ class LMIInstance(LMIWrapperBaseObject):
          self.__dict__["_lmi_class"] = lmi_class
          super(LMIInstance, self).__init__(conn)
  
@@ -14,8 +14,6 @@ index 126d438..17ca570 100644
 +            instance is deleted, -1 or 1 is returned.
 +        :rtype: int
 +        """
-+        if not isinstance(other, LMIInstance):
-+            return -1
 +        if self._deleted and not other._deleted:
 +            return -1
 +        elif not self._deleted and other._deleted:
@@ -29,7 +27,7 @@ diff --git a/cli/lmi/shell/LMIInstanceName.py b/cli/lmi/shell/LMIInstanceName.py
 index 254ddc2..08f8eb7 100644
 --- a/cli/lmi/shell/LMIInstanceName.py
 +++ b/cli/lmi/shell/LMIInstanceName.py
-@@ -33,6 +33,17 @@ class LMIInstanceName(LMIWrapperBaseObject):
+@@ -33,6 +33,15 @@ class LMIInstanceName(LMIWrapperBaseObject):
              cim_instance_name = cim_instance_name.wrapped_object
          self._cim_instance_name = cim_instance_name
  
@@ -40,8 +38,6 @@ index 254ddc2..08f8eb7 100644
 +            number, if self > other
 +        :rtype: int
 +        """
-+        if not isinstance(other, LMIInstanceName):
-+            return -1
 +        return cmp(self._cim_instance_name, other._cim_instance_name)
 +
      def __contains__(self, key):
